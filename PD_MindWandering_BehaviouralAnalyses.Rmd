@@ -1,0 +1,374 @@
+---
+title: "MindWandering_PD_hallucinations"
+author: "Claire O'Callaghan"
+date: "February 2018"
+output: html_document
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+library("knitr")
+library("pander")
+library("plyr")
+library("rcompanion")
+library("car")
+library("yarrr")
+library("agricolae")
+library("reshape2")
+library("lme4")
+library("lmerTest")
+library("MHTdiscrete")
+
+setwd("~/Desktop/Papers_in_the_works/Mind_Wandering_PD/Analysis_October_2017/")
+df <- read.csv("PD_MW_data.csv", header = TRUE, quote="\"", stringsAsFactors= TRUE, strip.white = TRUE, na.strings=c("NA", "-", "?"))
+attach(df)
+
+df2 <- df2<-subset(df, Group!="Control")
+attach(df2)
+```
+
+##Summary tables demographics & neuropsychology
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#requires plyr
+Age<-ddply(df, .(Group), summarise, mean = mean(Age, na.rm = TRUE), sd = sd(Age, na.rm = TRUE), se = sd/sqrt(length(Age)))
+
+Education<-ddply(df, .(Group), summarise, mean = mean(Education, na.rm = TRUE), sd = sd(Education, na.rm = TRUE), se = sd/sqrt(length(Education)))
+
+MoCA<-ddply(df2, .(Group), summarise, mean = mean(MOCA, na.rm = TRUE), sd = sd(MOCA, na.rm = TRUE), se = sd/sqrt(length(MOCA)))
+
+Duration<-ddply(df2, .(Group), summarise, mean = mean(Duration, na.rm = TRUE), sd = sd(Duration, na.rm = TRUE), se = sd/sqrt(length(Duration)))
+
+DDE<-ddply(df2, .(Group), summarise, mean = mean(DDE, na.rm = TRUE), sd = sd(DDE, na.rm = TRUE), se = sd/sqrt(length(DDE)))
+
+HY<-ddply(df2, .(Group), summarise, mean = mean(HY, na.rm = TRUE), sd = sd(HY, na.rm = TRUE), se = sd/sqrt(length(HY)))
+
+UPDRS.III<-ddply(df2, .(Group), summarise, mean = mean(UPDRS.III, na.rm = TRUE), sd = sd(UPDRS.III, na.rm = TRUE), se = sd/sqrt(length(UPDRS.III)))
+
+BDI<-ddply(df2, .(Group), summarise, mean = mean(BDI, na.rm = TRUE), sd = sd(BDI, na.rm = TRUE), se = sd/sqrt(length(BDI)))
+
+TMT.BA<-ddply(df2, .(Group), summarise, mean = mean(TMT.BA, na.rm = TRUE), sd = sd(TMT.BA, na.rm = TRUE), se = sd/sqrt(length(TMT.BA)))
+
+DSB<-ddply(df2, .(Group), summarise, mean = mean(DSB, na.rm = TRUE), sd = sd(DSB, na.rm = TRUE), se = sd/sqrt(length(DSB)))
+
+LM_retention<-ddply(df2, .(Group), summarise, mean = mean(LM_per_Ret, na.rm = TRUE), sd = sd(LM_per_Ret, na.rm = TRUE), se = sd/sqrt(length(LM_per_Ret)))
+
+pander(Age, caption = "Age")
+pander(Education, caption= "Education")
+pander(MoCA, caption= "MoCA")
+pander(Duration, caption= "Duration (yrs)")
+pander(DDE, caption= "Dopamine Dose Equivalence")
+pander(HY, caption= "Hoehn & Yahr stage")
+pander(UPDRS.III, caption= "UPDRS III")
+pander(BDI, caption= "Beck Depression Inventory")
+pander(TMT.BA, caption= "Trail Making B-A")
+pander(DSB, caption= "Digit Span Backwards")
+pander(LM_retention, caption= "Logical Memory %Retention")
+```
+
+##Statistics for demographics & neuropsychology
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#ANOVAs for three group comparisons
+#require pander for table
+
+Age.aov <- aov(Age ~ Group, data = df)
+Education.aov <- aov(Education ~ Group, data = df)
+
+pander(Age.aov, caption="Age anova")
+pander(Education.aov, caption="Education anova")
+
+#T-tests comparing PD+VH & PD-VH
+MoCA.Ttest <- t.test(MOCA~Group, data = df2)
+Duration.Ttest <- t.test(Duration~Group, data = df2)
+DDE.Ttest <- t.test(DDE~Group, data = df2)
+HY.Ttest <- t.test(HY~Group, data = df2)
+UPDRS.III.Ttest <- t.test(UPDRS.III~Group, data = df2)
+BDI.Ttest <- t.test(BDI~Group, data = df2)
+TMT.BA.Ttest <- t.test(TMT.BA~Group, data = df2)
+DSB.Ttest <- t.test(DSB~Group, data = df2)
+LM_per_Ret.Ttest <- t.test(LM_per_Ret~Group, data = df2)
+
+pander(MoCA.Ttest, caption="Moca T-test")
+pander(Duration.Ttest, caption="Duration T-test")
+pander(DDE.Ttest, caption="DDE T-test")
+pander(HY.Ttest, caption="Hoehn & Yahr T-test")
+pander(UPDRS.III.Ttest, caption="UPDRS.III T-test")
+pander(BDI.Ttest, caption="BDI T-test")
+pander(TMT.BA.Ttest, caption="Trail making B-A T-test")
+pander(DSB.Ttest, caption="Digits backwards T-test")
+pander(LM_per_Ret.Ttest, caption="Logical memory % retention T-test")
+```
+
+##Analaysis of Mind Wandering data
+###Normality checks
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Check normality at each Response level
+#requires rcompanion for hist plots
+shapiro.test(df$Level.1)
+qqnorm(df$Level.1)
+qqline(df$Level.1)
+plotNormalHistogram(df$Level.1)
+
+shapiro.test(df$Level.2)
+qqnorm(df$Level.2)
+qqline(df$Level.2)
+plotNormalHistogram(df$Level.2)
+
+shapiro.test(df$Level.3)
+qqnorm(df$Level.3)
+qqline(df$Level.3)
+plotNormalHistogram(df$Level.3)
+
+shapiro.test(df$Level.4)
+qqnorm(df$Level.4)
+qqline(df$Level.4)
+plotNormalHistogram(df$Level.4)
+```
+
+###Homogeneity of variance checks
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#requires car
+leveneTest(Level.1~Group, data = df)
+leveneTest(Level.2~Group, data = df)
+leveneTest(Level.3~Group, data = df)
+leveneTest(Level.4~Group, data = df)
+```
+
+###Data transformation
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+df$Level_1_sqrt <- sqrt(df$Level.1)
+df$Level_2_sqrt <- sqrt(df$Level.2)
+df$Level_3_sqrt <- sqrt(df$Level.3)
+df$Level_4_sqrt <- sqrt(df$Level.4)
+
+shapiro.test(df$Level_1_sqrt)
+qqnorm(df$Level_1_sqrt)
+qqline(df$Level_1_sqrt)
+plotNormalHistogram(df$Level_1_sqrt)
+
+shapiro.test(df$Level_2_sqrt)
+qqnorm(df$Level_2_sqrt)
+qqline(df$Level_2_sqrt)
+plotNormalHistogram(df$Level_2_sqrt)
+
+shapiro.test(df$Level_3_sqrt)
+qqnorm(df$Level_3_sqrt)
+qqline(df$Level_3_sqrt)
+plotNormalHistogram(df$Level_3_sqrt)
+
+shapiro.test(df$Level_4_sqrt)
+qqnorm(df$Level_4_sqrt)
+qqline(df$Level_4_sqrt)
+plotNormalHistogram(df$Level_4_sqrt)
+```
+
+###Mind Wandering frequency
+####plot
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#pdf(file = "~/Desktop/Papers_in_the_works/Mind_Wandering_PD/Analysis_October_2017/MW_frequency.pdf",   
+#    width = 6, # The width of the plot in inches
+#    height = 4) # The height of the plot in inches
+pirateplot(formula = MW.frequency ~ Group,
+data = df,
+#main = "Theme 0\ngoogle palette",
+pal = "google",
+point.o = .6,
+avg.line.o = 1,
+theme = 0,
+#line.lwd = 10,
+point.pch = 16,
+point.cex = 1.2,
+point.lwd = 10,
+jitter.val = .15,
+inf.disp = "line",
+inf.method = "se",
+inf.f.o = .8,
+inf.f.col = "black",
+inf.lwd = 2,
+bar.f.o = .4,
+ylab = "% Mind Wandering",
+xlab = "",
+ylim = c(0,100),
+cex.lab = 1.2,
+cex.names= 1.2,
+cex.axis=0.6)
+#dev.off()
+```
+
+###Mind Wandering frequency
+####Anova
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#require agricolae for FLSD test
+mod1 = lm(Level_4_sqrt ~ Group, data=df)
+Anova(lm(Level_4_sqrt ~ Group, data=df), type = 2)
+LSD.test(mod1,"Group", console = TRUE)
+```
+
+###Overall task perfromance
+####data preprocessing
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Transform df into long format
+###Subset & melt data to long for for repeated measures set up
+#requires rehape2 
+attach(df)
+df_levels_melted<-data.frame(Group,ID,Level_1_sqrt,Level_2_sqrt,Level_3_sqrt,Level_4_sqrt)
+df_levels_melted<-melt(df_levels_melted, id=c("Group","ID"))
+df_levels_melted <- setNames(df_levels_melted, c("Group","ID","Level", "Response"))
+
+df_levels_melted_raw<-data.frame(Group,ID,Level.1,Level.2,Level.3,Level.4)
+df_levels_melted_raw<-melt(df_levels_melted_raw, id=c("Group","ID"))
+df_levels_melted_raw <- setNames(df_levels_melted_raw, c("Group","ID","Level", "Response"))
+```
+
+###Overall task performance
+####plot
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+#pdf(file = "~/Desktop/Papers_in_the_works/Mind_Wandering_PD/Analysis_October_2017/Overall_performance.pdf",   
+#   width = 8, # The width of the plot in inches
+#   height = 4) # The height of the plot in inches
+pirateplot(formula = Response ~ Group + Level,
+data = df_levels_melted_raw,
+#main = "Theme 0\ngoogle palette",
+pal = "google",
+point.o = .6,
+avg.line.o = 1,
+theme = 0,
+#line.lwd = 10,
+point.pch = 16,
+point.cex = 1.2,
+point.lwd = 10,
+jitter.val = .15,
+inf.disp = "line",
+inf.method = "se",
+inf.f.o = .8,
+inf.f.col = "black",
+inf.lwd = 2,
+bar.f.o = .4,
+ylab = "% Response",
+xlab = "",
+ylim = c(0,100),
+cex.lab = 1.2,
+cex.names= .7,
+cex.axis=.6)
+#dev.off()
+```
+
+###Overall task performance
+####ANOVA
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#requires lme4 & lmerTest
+aov1 <- lmer(Response ~ Level * Group + (1 | ID), data = df_levels_melted)
+anova(aov1, type=2)
+
+#Pairwise t-test to follow up main effect of Level
+pairwise.t.test(df_levels_melted$Response, df_levels_melted$Level, p.adjust.method ="none")
+p<- c(0.0012,1.3e-07,0.0298,2.7e-08,0.0134,0.7609)
+Sidak.p.adjust(p, 0.05, make.decision=TRUE)
+
+
+#Separate Anovas to compute simple effects after the interaction
+#Use df file & compute group differences at each level
+Anova(lm(Level_1_sqrt ~ Group, data=df), type = 2)
+Anova(lm(Level_2_sqrt ~ Group, data=df), type = 2)
+Anova(lm(Level_3_sqrt ~ Group, data=df), type = 2)
+Anova(lm(Level_4_sqrt ~ Group, data=df), type = 2)
+```
+
+###Duration effects
+####assumption checks
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Check normality at each Response level
+#requires rcompanion for hist plots
+shapiro.test(df$Short)
+qqnorm(df$Short)
+qqline(df$Short)
+plotNormalHistogram(df$Short)
+
+shapiro.test(df$Medium)
+qqnorm(df$Medium)
+qqline(df$Medium)
+plotNormalHistogram(df$Medium)
+
+shapiro.test(df$Long)
+qqnorm(df$Long)
+qqline(df$Long)
+plotNormalHistogram(df$Long)
+
+#sqrt
+
+df$Short_sqrt <- sqrt(df$Short)
+df$Medium_sqrt <- sqrt(df$Medium)
+df$Long_sqrt <- sqrt(df$Long)
+```
+
+###Duration
+####data preprocessing
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Transform df into long format
+###Subset & melt data to long for for repeated measures set up
+#requires rehape2 
+attach(df)
+df_duration_melted<-data.frame(Group,ID,Short_sqrt,Medium_sqrt,Long_sqrt)
+df_duration_melted<-melt(df_duration_melted, id=c("Group","ID"))
+df_duration_melted <- setNames(df_duration_melted, c("Group","ID","Duration", "Response"))
+
+df_duration_melted_raw<-data.frame(Group,ID,Short,Medium,Long)
+df_duration_melted_raw<-melt(df_duration_melted_raw, id=c("Group","ID"))
+df_duration_melted_raw <- setNames(df_duration_melted_raw, c("Group","ID","Duration", "Response"))
+```
+
+###Duration
+####plot
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+#pdf(file = "~/Desktop/Papers_in_the_works/Mind_Wandering_PD/Analysis_October_2017/Duration.pdf",   
+#   width = 7, # The width of the plot in inches
+#   height = 4) # The height of the plot in inches
+pirateplot(formula = Response ~ Group + Duration,
+data = df_duration_melted_raw,
+#main = "Theme 0\ngoogle palette",
+pal = "google",
+point.o = .6,
+avg.line.o = 1,
+theme = 0,
+#line.lwd = 10,
+point.pch = 16,
+point.cex = 1.2,
+point.lwd = 10,
+jitter.val = .15,
+inf.disp = "line",
+inf.method = "se",
+inf.f.o = .8,
+inf.f.col = "black",
+inf.lwd = 2,
+bar.f.o = .4,
+ylab = "Average trial score",
+xlab = "",
+ylim = c(0,4),
+cex.lab = 1.2,
+cex.names= .7,
+cex.axis=.6)
+#dev.off()
+```
+
+###Duration
+####ANOVA
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#requires lme4 & lmerTest
+aov5 <- lmer(Response ~ Duration * Group + (1 | ID), data = df_duration_melted)
+anova(aov5, type=2)
+
+#FLSD to follow up main effect of Duration
+LSD.test(lm(Response~Duration, data = df_duration_melted),"Duration", console = TRUE)
+```
+
+

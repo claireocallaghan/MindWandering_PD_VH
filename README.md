@@ -1,5 +1,5 @@
 # MindWandering_PD_VH
-Repository for analyses scripts and task materials for 
+Repository for analyses scripts and task materials for study: 
 
 "Mind-wandering in Parkinson’s disease hallucinations reflects primary visual and default network coupling" 
 

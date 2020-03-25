@@ -5,7 +5,7 @@ Repository for analyses scripts and task materials for study:
 
 Ishan C. Walpola, Alana J. Muller, Julie M. Hall, Jessica R. Andrews-Hanna, Muireann Irish, Simon J. G. Lewis, James M. Shine and Claire O’Callaghan
 
-In press, CORTEX
+Cortex 125 (2020): 233-245
 
 1) R markdown file contains scripts for the behavioural analysis
 
